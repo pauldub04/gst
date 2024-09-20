@@ -47,7 +47,7 @@ int send_data(int client_fd, int* result, int rows, int cols, double compute_tim
     return 0;
 }
 
-void free_resources(int rows, int cols, int*** matrix, int** vector, int** result) {
+void free_resources(int rows, int*** matrix, int** vector, int** result) {
     if (matrix != NULL && *matrix != NULL) {
         for (int i = 0; i < rows; ++i) {
             if ((*matrix)[i] != NULL) {
@@ -87,12 +87,12 @@ int process_client(int client_fd) {
     int err = 0;
 
     if ((err = recv_data(client_fd, &rows, &cols, &matrix, &vector, client_hash)) < 0) {
-        free_resources(rows, cols, &matrix, &vector, &result);
+        free_resources(rows, &matrix, &vector, &result);
         return err;
     }
 
     if ((err = check_hash(rows, cols, matrix, vector, client_hash)) < 0) {
-        free_resources(rows, cols, &matrix, &vector, &result);
+        free_resources(rows, &matrix, &vector, &result);
         return err;
     }
 
@@ -102,11 +102,11 @@ int process_client(int client_fd) {
     double compute_time = (double)(clock() - start) / CLOCKS_PER_SEC;
 
     if ((err = send_data(client_fd, result, rows, cols, compute_time)) < 0) {
-        free_resources(rows, cols, &matrix, &vector, &result);
+        free_resources(rows, &matrix, &vector, &result);
         return err;
     }
 
-    free_resources(rows, cols, &matrix, &vector, &result);
+    free_resources(rows, &matrix, &vector, &result);
     return err;
 }
 

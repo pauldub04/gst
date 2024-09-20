@@ -1,6 +1,5 @@
 CC = cc
-CFLAGS := -std=c99 -g
-#-O3 -pedantic -Wall -Werror -Wextra
+CFLAGS := -std=c99 -O3 -pedantic -Wall -Werror -Wextra
 LDFLAGS :=
 
 CFLAGS += -I/usr/local/opt/openssl/include
