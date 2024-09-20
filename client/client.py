@@ -8,8 +8,8 @@ import time
 RESULT_FILE = 'result.txt'
 STATISTICS_FILE = 'statistics.txt'
 
-MIN_INT = -10**5
-MAX_INT = +10**5
+MIN_INT = -10**2
+MAX_INT = +10**2
 
 def generate_matrix(rows, cols):
     return [[random.randint(MIN_INT, MAX_INT) for _ in range(cols)] for _ in range(rows)]
@@ -38,6 +38,14 @@ def recv_data(sock, rows):
     compute_time = struct.unpack('<d', sock.recv(8))[0]
     data_size = struct.unpack('<i', sock.recv(4))[0]
     return result_unpacked, compute_time, data_size
+
+def multiply_matrix_vector(matrix, vector):
+    rows = len(matrix)
+    result = [0] * rows
+    for i in range(rows):
+        for j in range(len(vector)):
+            result[i] += matrix[i][j] * vector[j]
+    return result
 
 def main():
     start_time = time.time()
@@ -69,6 +77,11 @@ def main():
         except:
             print("Error connecting to server")
             return 0
+
+        if multiply_matrix_vector(matrix, vector) == list(result):
+            print("\nClient and server results match!")
+        else:
+            print("\nClient and server results do NOT match!")
 
         with open(RESULT_FILE, 'w') as f:
             for value in result:

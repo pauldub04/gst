@@ -100,7 +100,7 @@ int process_client(int client_fd) {
     clock_t start = clock();
     compute(rows, cols, matrix, vector, result);
     double compute_time = (double)(clock() - start) / CLOCKS_PER_SEC;
-    
+
     if ((err = send_data(client_fd, result, rows, cols, compute_time)) < 0) {
         free_resources(rows, cols, &matrix, &vector, &result);
         return err;
