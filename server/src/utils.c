@@ -26,20 +26,37 @@ int init_server(int port, int connections) {
     return server_fd;
 }
 
-ssize_t read_full(int sockfd, void* buffer, size_t length) {
+ssize_t recv_full(int sockfd, void* buffer, size_t length) {
     size_t total_read = 0;
     ssize_t bytes_read;
 
     while (total_read < length) {
         bytes_read = recv(sockfd, (char*) buffer+total_read, length-total_read, 0);
         if (bytes_read < 0) {
-            return -1;
+            error_return("recv");
         } else if (bytes_read == 0) {
             break;
         }
         total_read += bytes_read;
     }
     return total_read;
+}
+
+
+ssize_t send_full(int sockfd, const void* buffer, size_t length) {
+    size_t total_sent = 0;
+    ssize_t bytes_sent;
+
+    while (total_sent < length) {
+        bytes_sent = send(sockfd, (const char*) buffer+total_sent, length-total_sent, 0);
+        if (bytes_sent < 0) {
+            error_return("send");
+        } else if (bytes_sent == 0) {
+            break;
+        }
+        total_sent += bytes_sent;
+    }
+    return total_sent;
 }
 
 unsigned int calculate_sha256(int rows, int cols, int** matrix, int* vector, unsigned char* output_hash) {

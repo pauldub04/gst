@@ -18,3 +18,5 @@ cmake-*
 build/
 server
 !server/
+result.txt
+statistics.txt

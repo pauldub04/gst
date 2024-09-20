@@ -15,7 +15,8 @@
 #define info(...)           { fprintf(stdout, "[INFO]: " __VA_ARGS__); fprintf(stdout, "\n"); fflush(stdout); }
 
 int init_server(int port, int connections);
-ssize_t read_full(int sockfd, void* buffer, size_t length);
+ssize_t recv_full(int sockfd, void* buffer, size_t length);
+ssize_t send_full(int sockfd, const void* buffer, size_t length);
 
 unsigned int calculate_sha256(int rows, int cols, int** matrix, int* vector, unsigned char* output_hash);
 void print_sha256(unsigned char* hash, size_t len);
