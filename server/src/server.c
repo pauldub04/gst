@@ -8,10 +8,10 @@
 
 #define MAX_CONNECTIONS 128
 
-int recv_data(int client_fd, int* rows, int* cols, int*** matrix, int** vector, unsigned char* client_hash) {
+int recv_data(int client_sock, int* rows, int* cols, int*** matrix, int** vector, unsigned char* client_hash) {
     if (
-        recv_full(client_fd, rows, sizeof(int)) != sizeof(int) ||
-        recv_full(client_fd, cols, sizeof(int)) != sizeof(int)
+        recv_full(client_sock, rows, sizeof(int)) != sizeof(int) ||
+        recv_full(client_sock, cols, sizeof(int)) != sizeof(int)
     ) {
         error_return("reading data");
     }
@@ -21,26 +21,26 @@ int recv_data(int client_fd, int* rows, int* cols, int*** matrix, int** vector, 
     for (int i = 0; i < *rows; i++) {
         (*matrix)[i] = (int*) malloc(*cols * sizeof(int));
 
-        if (recv_full(client_fd, (*matrix)[i], *cols * sizeof(int)) != (ssize_t)(*cols * sizeof(int))) {
+        if (recv_full(client_sock, (*matrix)[i], *cols * sizeof(int)) != (ssize_t)(*cols * sizeof(int))) {
             error_return("reading data");
         }
     }
 
     if (
-        recv_full(client_fd, *vector, *cols * sizeof(int)) != (ssize_t)(*cols * sizeof(int)) ||
-        recv_full(client_fd, client_hash, SHA256_DIGEST_LENGTH) != SHA256_DIGEST_LENGTH
+        recv_full(client_sock, *vector, *cols * sizeof(int)) != (ssize_t)(*cols * sizeof(int)) ||
+        recv_full(client_sock, client_hash, SHA256_DIGEST_LENGTH) != SHA256_DIGEST_LENGTH
     ) {
         error_return("reading data");
     }
     return 0;
 }
 
-int send_data(int client_fd, int* result, int rows, int cols, double compute_time) {
+int send_data(int client_sock, int rows, int cols, int* result, double compute_time) {
     int data_size = rows * cols * sizeof(int) + cols * sizeof(int);
     if (
-        send_full(client_fd, result, rows * sizeof(int)) != (ssize_t)(rows * sizeof(int)) ||
-        send_full(client_fd, &compute_time, sizeof(double)) != sizeof(double) ||
-        send_full(client_fd, &data_size, sizeof(int)) != sizeof(int)
+        send_full(client_sock, result, rows * sizeof(int)) != (ssize_t)(rows * sizeof(int)) ||
+        send_full(client_sock, &compute_time, sizeof(double)) != sizeof(double) ||
+        send_full(client_sock, &data_size, sizeof(int)) != sizeof(int)
     ) {
         error_return("sending data");
     }
@@ -77,7 +77,7 @@ int check_hash(int rows, int cols, int** matrix, int* vector, unsigned char* cli
     return 0;
 }
 
-int process_client(int client_fd) {
+int process_client(int client_sock) {
     int rows = 0;
     int cols = 0;
     int** matrix = NULL;
@@ -86,7 +86,7 @@ int process_client(int client_fd) {
     unsigned char client_hash[EVP_MAX_MD_SIZE];
     int err = 0;
 
-    if ((err = recv_data(client_fd, &rows, &cols, &matrix, &vector, client_hash)) < 0) {
+    if ((err = recv_data(client_sock, &rows, &cols, &matrix, &vector, client_hash)) < 0) {
         free_resources(rows, &matrix, &vector, &result);
         return err;
     }
@@ -101,7 +101,7 @@ int process_client(int client_fd) {
     compute(rows, cols, matrix, vector, result);
     double compute_time = (double)(clock() - start) / CLOCKS_PER_SEC;
 
-    if ((err = send_data(client_fd, result, rows, cols, compute_time)) < 0) {
+    if ((err = send_data(client_sock, rows, cols, result, compute_time)) < 0) {
         free_resources(rows, &matrix, &vector, &result);
         return err;
     }
@@ -121,18 +121,18 @@ int main(int argc, char *argv[]) {
     while (1) {
         struct sockaddr_in client;
         socklen_t client_len = sizeof(client);
-        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
-        if (client_fd < 0) {
+        int client_sock = accept(server_fd, (struct sockaddr *) &client, &client_len);
+        if (client_sock < 0) {
             error_continue("accept");
         }
 
-        info("accepting socket %d", client_fd);
-        if (process_client(client_fd) == 0) {
+        info("accepting socket %d", client_sock);
+        if (process_client(client_sock) == 0) {
             info("success");
         }
-        info("closing socket %d", client_fd);
+        info("closing socket %d", client_sock);
 
-        close(client_fd);
+        close(client_sock);
         printf("\n");
     }
     
