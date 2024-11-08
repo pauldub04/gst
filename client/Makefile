@@ -1,16 +1,17 @@
-
-TARGET := client
+CLIENT := client
+TEST := test
 
 all: compile
 
 run: compile
-	./$(TARGET)
+	./$(CLIENT)
 
 compile:
-	go build ./cmd/$(TARGET)
+	go build ./cmd/$(CLIENT)
+	go build ./cmd/$(TEST)
 
 clean:
-	rm -rf $(TARGET) result.txt statistics.txt
+	rm -rf $(CLIENT) $(TEST) result.txt statistics.txt
 
 deps:
 	go mod download

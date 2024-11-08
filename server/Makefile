@@ -1,9 +1,9 @@
-CC = cc
+CC = mpicc
 CFLAGS := -std=c99 -O3 -pedantic -Wall -Werror -Wextra
 LDFLAGS :=
 
-CFLAGS += -fopenmp
-LDFLAGS += -fopenmp
+# CFLAGS += -fopenmp
+# LDFLAGS += -fopenmp
 
 CFLAGS += -I/usr/local/opt/openssl/include
 LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
