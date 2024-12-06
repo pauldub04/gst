@@ -1,4 +1,3 @@
-CXX = mpic++
 CXXFLAGS := -O3 -Wall -Werror -Wextra
 LDFLAGS :=
 
@@ -8,15 +7,18 @@ LDFLAGS :=
 # CFLAGS += -I/usr/local/opt/openssl/include
 # LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
 
-TARGET := server
+TARGET := compute
 SRC_DIR := src
 # SRC_DIR := src
 # BUILD_DIR := build
 
-all: $(TARGET)
+all: server_mpi
 
-$(TARGET):
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/server.cpp -o $(TARGET)
+server_mpi:
+	mpic++ $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cpp -o $(TARGET)
+
+server_cuda:
+	nvcc $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cu -o $(TARGET)
 
 clean:
 	rm $(TARGET)
