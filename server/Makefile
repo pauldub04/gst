@@ -1,4 +1,5 @@
-CXXFLAGS := -O3 -Wall -Werror -Wextra
+CXXFLAGS := -Wno-deprecated-gpu-targets
+# CXXFLAGS := -O3 -Wall -Werror -Wextra
 LDFLAGS :=
 
 # CXXFLAGS += -fopenmp
@@ -14,11 +15,14 @@ SRC_DIR := src
 
 all: server_mpi
 
+server_simple:
+	g++ $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cpp -o $(TARGET)
+
 server_mpi:
 	mpic++ $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cpp -o $(TARGET)
 
 server_cuda:
-	nvcc $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cu -o $(TARGET)
+	nvcc -arch=compute_35 -code=sm_35 $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cu -o $(TARGET)
 
 clean:
 	rm $(TARGET)
