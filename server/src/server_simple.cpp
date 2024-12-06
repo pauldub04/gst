@@ -14,21 +14,17 @@ int main(int argc, char** argv) {
     std::string output_filename = argv[2];
 
     int rows, cols;
-    std::vector<int> matrix, vector, local_matrix;
-    std::vector<int> result;
-
+    std::vector<int> matrix, vector;
     read_data(input_filename, rows, cols, matrix, vector);
-    result.assign(rows, 0);
-    vector.assign(cols, 0);
+    std::vector<int> result(rows, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::vector<int> local_result(rows, 0);
-    compute(rows, cols, local_matrix, vector, local_result);
+    compute(rows, cols, matrix, vector, result);
 
     auto end = std::chrono::high_resolution_clock::now();
     double time_taken = std::chrono::duration<double>(end - start).count();
 
-    write_result(output_filename, result, time_taken, false);
+    write_result(output_filename, result, time_taken, true);
     return 0;
 }

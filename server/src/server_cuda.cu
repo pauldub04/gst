@@ -4,7 +4,10 @@
 #include <cuda_runtime.h>
 #include "shared.h"
 
-__global__ void matrix_vector_multiply(const int* d_matrix, const int* d_vector, int* d_result, int rows, int cols) {
+std::chrono::high_resolution_clock::time_point start;
+std::chrono::high_resolution_clock::time_point end;
+
+__global__ void matrix_vector_multiply(int* d_matrix, int* d_vector, int* d_result, int rows, int cols) {
     int row = blockIdx.x * blockDim.x + threadIdx.x;
     if (row < rows) {
         int sum = 0;
@@ -15,19 +18,44 @@ __global__ void matrix_vector_multiply(const int* d_matrix, const int* d_vector,
     }
 }
 
+void checkCudaError(cudaError_t err, const char* message) {
+    if (err != cudaSuccess) {
+        fprintf(stderr, "CUDA error: %s: %s\n", message, cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+}
+
 void compute_cuda(int rows, int cols, const std::vector<int>& flat_matrix, const std::vector<int>& vector, std::vector<int>& result) {
-    int *d_matrix, *d_vector, *d_result;
-    cudaMalloc((void**)&d_matrix, rows * cols * sizeof(int));
-    cudaMalloc((void**)&d_vector, cols * sizeof(int));
-    cudaMalloc((void**)&d_result, rows * sizeof(int));
+    int* d_matrix;
+    int* d_vector;
+    int* d_result;
 
-    cudaMemcpy(d_matrix, flat_matrix.data(), rows * cols * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_vector, vector.data(), cols * sizeof(int), cudaMemcpyHostToDevice);
+    cudaError_t err = cudaSuccess;
+    err = cudaMalloc((void**)&d_matrix, flat_matrix.size() * sizeof(int));
+    checkCudaError(err, "cudaMalloc d_matrix");
+    err = cudaMalloc((void**)&d_vector, vector.size() * sizeof(int));
+    checkCudaError(err, "cudaMalloc d_vector");
+    err = cudaMalloc((void**)&d_result, rows * sizeof(int));
+    checkCudaError(err, "cudaMalloc d_result");
 
-    int blockSize = 256;
-    int numBlocks = (rows + blockSize - 1) / blockSize;
-    matrix_vector_multiply<<<numBlocks, blockSize>>>(d_matrix, d_vector, d_result, rows, cols);
-    cudaMemcpy(result.data(), d_result, rows * sizeof(int), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy(d_matrix, flat_matrix.data(), flat_matrix.size() * sizeof(int), cudaMemcpyHostToDevice);
+    checkCudaError(err, "cudaMemcpy d_matrix");
+    err = cudaMemcpy(d_vector, vector.data(), vector.size() * sizeof(int), cudaMemcpyHostToDevice);
+    checkCudaError(err, "cudaMemcpy d_vector");
+
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (rows + threadsPerBlock - 1) / threadsPerBlock;
+
+    start = std::chrono::high_resolution_clock::now();
+    matrix_vector_multiply<<<blocksPerGrid, threadsPerBlock>>>(d_matrix, d_vector, d_result, rows, cols);
+    cudaDeviceSynchronize();
+    end = std::chrono::high_resolution_clock::now();
+
+    err = cudaGetLastError();
+    checkCudaError(err, "kernel launch");
+
+    err = cudaMemcpy(result.data(), d_result, rows * sizeof(int), cudaMemcpyDeviceToHost);
+    checkCudaError(err, "cudaMemcpy result");
 
     cudaFree(d_matrix);
     cudaFree(d_vector);
@@ -44,21 +72,13 @@ int main(int argc, char** argv) {
     std::string output_filename = argv[2];
 
     int rows, cols;
-    std::vector<int> matrix, vector, local_matrix;
-    std::vector<int> result;
-
+    std::vector<int> matrix, vector;
     read_data(input_filename, rows, cols, matrix, vector);
-    result.assign(rows, 0);
-    vector.assign(cols, 0);
+    std::vector<int> result(rows, 0);
 
-    auto start = std::chrono::high_resolution_clock::now();
+    compute_cuda(rows, cols, matrix, vector, result);
 
-    std::vector<int> local_result(rows, 0);
-    compute_cuda(rows, cols, local_matrix, vector, local_result);
-
-    auto end = std::chrono::high_resolution_clock::now();
     double time_taken = std::chrono::duration<double>(end - start).count();
-
-    write_result(output_filename, result, time_taken, false);
+    write_result(output_filename, result, time_taken, true);
     return 0;
 }

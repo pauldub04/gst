@@ -1,8 +1,7 @@
 module client
 
-go 1.23.1
+go 1.21.13
 
-require (
-	github.com/spf13/pflag v1.0.5
-	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
-)
+require github.com/spf13/pflag v1.0.5
+
+require golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect

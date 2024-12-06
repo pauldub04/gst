@@ -32,7 +32,7 @@ func main() {
 	filename := pflag.String("filename", "input", "")
 	seed := pflag.Uint64("seed", 0, "")
 	runs := pflag.Int32("runs", 1, "")
-	np := pflag.Int32("np", 4, "")
+	np := pflag.Int32("np", 2, "")
 	pflag.Parse()
 
 	if *seed == 0 {
@@ -52,7 +52,7 @@ func main() {
 			fmt.Printf("Run %d of %d, Size %d; ", i+1, *runs, sizeInMB)
 			client.Run(*filename, *seed, sizeInMB)
 
-			cmd := exec.Command("mpirun", "-np", strconv.Itoa(int(*np)), "./compute", *filename, "output")
+			cmd := exec.Command("mpirun", "-np", strconv.Itoa(int(*np)), "--allow-run-as-root", "./compute", *filename, "output")
 			// cmd := exec.Command("./compute", *filename, "output")
 			err := cmd.Run()
 			if err != nil {
