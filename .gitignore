@@ -18,5 +18,10 @@ cmake-*
 build/
 server
 !server/
+compute
+time
+test
+input
+output
 result.txt
 statistics.txt

@@ -3,7 +3,9 @@ package client
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"net"
+	"os"
 )
 
 type TReq struct {
@@ -11,7 +13,6 @@ type TReq struct {
 	Cols   int32
 	Matrix [][]int32
 	Vector []int32
-	Hash   []byte
 }
 
 type TRsp struct {
@@ -36,9 +37,6 @@ func SendData(conn net.Conn, req *TReq) error {
 	if _, err := conn.Write(buf.Bytes()); err != nil {
 		return err
 	}
-	if _, err := conn.Write(req.Hash); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -58,4 +56,27 @@ func RecvData(conn net.Conn, rows int32) (*TRsp, error) {
 	}
 
 	return &rsp, nil
+}
+
+func SaveDataToFile(filename string, req *TReq) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fmt.Fprintf(file, "%d %d\n", req.Rows, req.Cols)
+
+	for _, row := range req.Matrix {
+		for _, value := range row {
+			fmt.Fprintf(file, "%d ", value)
+		}
+		fmt.Fprintln(file)
+	}
+
+	for _, value := range req.Vector {
+		fmt.Fprintf(file, "%d ", value)
+	}
+	fmt.Fprintln(file)
+	return nil
 }

@@ -1,34 +1,22 @@
-CC = mpicc
-CFLAGS := -std=c99 -O3 -pedantic -Wall -Werror -Wextra
+CXX = mpic++
+CXXFLAGS := -O3 -Wall -Werror -Wextra
 LDFLAGS :=
 
-# CFLAGS += -fopenmp
+# CXXFLAGS += -fopenmp
 # LDFLAGS += -fopenmp
 
-CFLAGS += -I/usr/local/opt/openssl/include
-LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
+# CFLAGS += -I/usr/local/opt/openssl/include
+# LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
 
 TARGET := server
 SRC_DIR := src
-BUILD_DIR := build
-
-SRCS := $(wildcard $(SRC_DIR)/*.c)
-OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
-DEPS = $(OBJS:%.o=%.d)
-
+# SRC_DIR := src
+# BUILD_DIR := build
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
-
--include $(DEPS)
-
-$(BUILD_DIR)/%.c.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -MMD -c $< -o $@
+$(TARGET):
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/server.cpp -o $(TARGET)
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
-
-.PHONY: all clean
+	rm $(TARGET)
