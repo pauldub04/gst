@@ -7,8 +7,8 @@
 #include <cuda_runtime.h>
 
 const int gpu_rank = 0;
-const int gpu_weight = 10;
-const int cpu_weight = 1;
+const int gpu_weight = 1;
+const int cpu_weight = 10;
 
 double start = 0;
 double end = 0;
@@ -50,7 +50,7 @@ void run_gpu(int rows, int cols, const std::vector<int>& flat_matrix, const std:
     cudaMemcpy(d_matrix, flat_matrix.data(), flat_matrix.size() * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_vector, vector.data(), vector.size() * sizeof(int), cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 256;
+    int threadsPerBlock = 128;
     int blocksPerGrid = (rows + threadsPerBlock - 1) / threadsPerBlock;
 
     start = MPI_Wtime();

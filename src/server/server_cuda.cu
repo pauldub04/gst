@@ -4,8 +4,8 @@
 #include <cuda_runtime.h>
 #include "shared.h"
 
-std::chrono::high_resolution_clock::time_point start;
-std::chrono::high_resolution_clock::time_point end;
+std::chrono::high_resolution_clock::time_point start{};
+std::chrono::high_resolution_clock::time_point end{};
 
 __global__ void compute_cuda(int* d_matrix, int* d_vector, int* d_result, int rows, int cols) {
     int row = blockIdx.x * blockDim.x + threadIdx.x;
@@ -18,32 +18,19 @@ __global__ void compute_cuda(int* d_matrix, int* d_vector, int* d_result, int ro
     }
 }
 
-void checkCudaError(cudaError_t err, const char* message) {
-    if (err != cudaSuccess) {
-        fprintf(stderr, "CUDA error: %s: %s\n", message, cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-}
-
 void run_gpu(int rows, int cols, const std::vector<int>& flat_matrix, const std::vector<int>& vector, std::vector<int>& result) {
     int* d_matrix;
     int* d_vector;
     int* d_result;
 
-    cudaError_t err = cudaSuccess;
-    err = cudaMalloc((void**)&d_matrix, flat_matrix.size() * sizeof(int));
-    checkCudaError(err, "cudaMalloc d_matrix");
-    err = cudaMalloc((void**)&d_vector, vector.size() * sizeof(int));
-    checkCudaError(err, "cudaMalloc d_vector");
-    err = cudaMalloc((void**)&d_result, rows * sizeof(int));
-    checkCudaError(err, "cudaMalloc d_result");
+    cudaMalloc((void**)&d_matrix, flat_matrix.size() * sizeof(int));
+    cudaMalloc((void**)&d_vector, vector.size() * sizeof(int));
+    cudaMalloc((void**)&d_result, rows * sizeof(int));
 
-    err = cudaMemcpy(d_matrix, flat_matrix.data(), flat_matrix.size() * sizeof(int), cudaMemcpyHostToDevice);
-    checkCudaError(err, "cudaMemcpy d_matrix");
-    err = cudaMemcpy(d_vector, vector.data(), vector.size() * sizeof(int), cudaMemcpyHostToDevice);
-    checkCudaError(err, "cudaMemcpy d_vector");
+    cudaMemcpy(d_matrix, flat_matrix.data(), flat_matrix.size() * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_vector, vector.data(), vector.size() * sizeof(int), cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 256;
+    int threadsPerBlock = 128;
     int blocksPerGrid = (rows + threadsPerBlock - 1) / threadsPerBlock;
 
     start = std::chrono::high_resolution_clock::now();
@@ -51,15 +38,11 @@ void run_gpu(int rows, int cols, const std::vector<int>& flat_matrix, const std:
     cudaDeviceSynchronize();
     end = std::chrono::high_resolution_clock::now();
 
-    err = cudaGetLastError();
-    checkCudaError(err, "kernel launch");
-
-    err = cudaMemcpy(result.data(), d_result, rows * sizeof(int), cudaMemcpyDeviceToHost);
-    checkCudaError(err, "cudaMemcpy result");
-
+    cudaMemcpy(result.data(), d_result, rows * sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(d_matrix);
     cudaFree(d_vector);
     cudaFree(d_result);
+    assert(cudaGetLastError() == cudaSuccess);
 }
 
 int main(int argc, char** argv) {
