@@ -5,14 +5,14 @@ SRC_DIR := server
 
 CXXFLAGS := 
 LDFLAGS :=
-CXXFLAGS += -O3 -Wall -Werror -Wextra
-# CXXFLAGS += -Wno-deprecated-gpu-targets
+# CXXFLAGS += -O3 -Wall -Werror -Wextra
+CXXFLAGS += -Wno-deprecated-gpu-targets
 
 
 all: run
 
-run: client_go server_mpi
-	cd build && ./test --seed 1 --local --runs 3 --mpi 4
+run: client_go server_cuda_mpi
+	cd build && ./test --seed 1 --local --runs 1 --mpi 2
 # cd build && ./test --seed 1 --local
 
 server_simple:
@@ -30,6 +30,10 @@ server_mpi_send:
 server_cuda:
 	@mkdir -p build
 	nvcc -arch=compute_35 -code=sm_35 $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cu -o build/$(TARGET)
+
+server_cuda_mpi:
+	@mkdir -p build
+	nvcc -arch=compute_35 -code=sm_35 -ccbin mpic++ $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cu -o build/$(TARGET)
 
 client_go:
 	@mkdir -p build

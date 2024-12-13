@@ -7,7 +7,7 @@
 std::chrono::high_resolution_clock::time_point start;
 std::chrono::high_resolution_clock::time_point end;
 
-__global__ void matrix_vector_multiply(int* d_matrix, int* d_vector, int* d_result, int rows, int cols) {
+__global__ void compute_cuda(int* d_matrix, int* d_vector, int* d_result, int rows, int cols) {
     int row = blockIdx.x * blockDim.x + threadIdx.x;
     if (row < rows) {
         int sum = 0;
@@ -25,7 +25,7 @@ void checkCudaError(cudaError_t err, const char* message) {
     }
 }
 
-void compute_cuda(int rows, int cols, const std::vector<int>& flat_matrix, const std::vector<int>& vector, std::vector<int>& result) {
+void run_gpu(int rows, int cols, const std::vector<int>& flat_matrix, const std::vector<int>& vector, std::vector<int>& result) {
     int* d_matrix;
     int* d_vector;
     int* d_result;
@@ -47,7 +47,7 @@ void compute_cuda(int rows, int cols, const std::vector<int>& flat_matrix, const
     int blocksPerGrid = (rows + threadsPerBlock - 1) / threadsPerBlock;
 
     start = std::chrono::high_resolution_clock::now();
-    matrix_vector_multiply<<<blocksPerGrid, threadsPerBlock>>>(d_matrix, d_vector, d_result, rows, cols);
+    compute_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_matrix, d_vector, d_result, rows, cols);
     cudaDeviceSynchronize();
     end = std::chrono::high_resolution_clock::now();
 
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     read_data(input_filename, rows, cols, matrix, vector);
     std::vector<int> result(rows, 0);
 
-    compute_cuda(rows, cols, matrix, vector, result);
+    run_gpu(rows, cols, matrix, vector, result);
 
     double time_taken = std::chrono::duration<double>(end - start).count();
     write_result(output_filename, result, time_taken, true);
