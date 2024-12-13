@@ -80,3 +80,17 @@ func SaveDataToFile(filename string, req *TReq) error {
 	fmt.Fprintln(file)
 	return nil
 }
+
+func SaveVectorToFile(filename string, vector []int32) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for _, value := range vector {
+		fmt.Fprintf(file, "%d ", value)
+	}
+	fmt.Fprintln(file)
+	return nil
+}

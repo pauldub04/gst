@@ -3,7 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <cassert>
-#include <omp.h>
+// #include <omp.h>
 
 
 void read_data(const std::string &filename, int &rows, int &cols, std::vector<int> &matrix, std::vector<int> &vector) {
@@ -46,7 +46,7 @@ void write_result(const std::string &filename, const std::vector<int> &result, d
     }
 }
 
-void compute(int rows, int cols, const std::vector<int>& flat_matrix, const std::vector<int>& vector, std::vector<int>& local_result) {
+void compute_simple(int rows, int cols, const std::vector<int>& flat_matrix, const std::vector<int>& vector, std::vector<int>& local_result) {
     assert(int(flat_matrix.size()) == rows * cols);
     assert(int(local_result.size()) == rows);
     assert(int(vector.size()) == cols);

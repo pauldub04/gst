@@ -19,6 +19,6 @@ func main() {
 		return
 	}
 
-	client.Run(*filename, *seed, *sizeInMB)
+	client.Run(*filename, *seed, *sizeInMB, false, "local")
 	fmt.Printf("Generated data to %s\n", *filename)
 }

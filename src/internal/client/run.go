@@ -23,10 +23,15 @@ func GenerateRequest(seed uint64, sizeInMB int32) *TReq {
 	}
 }
 
-func Run(filename string, seed uint64, sizeInMB int32) {
+func Run(filename string, seed uint64, sizeInMB int32, runLocal bool, localFilename string) {
 	req := GenerateRequest(seed, sizeInMB)
 
 	if err := SaveDataToFile(filename, req); err != nil {
 		log.Fatal("Error saving data to file:", err)
+	}
+
+	if runLocal {
+		result := MultiplyMatrixVector(req.Matrix, req.Vector)
+		SaveVectorToFile(localFilename, result)
 	}
 }

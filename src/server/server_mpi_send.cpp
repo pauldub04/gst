@@ -53,11 +53,11 @@ int main(int argc, char** argv) {
     if (world_rank == 0) {
         int offset = 0;
         for (int i = 0; i < world_size; ++i) {
-            int count = (i < extra_rows ? rows_per_proc + 1 : rows_per_proc) * cols;
+            int count = (i < extra_rows ? rows_per_proc+1 : rows_per_proc) * cols;
             if (i == 0) {
-                std::copy(matrix.begin(), matrix.begin() + count, local_matrix.begin());
+                std::copy(matrix.begin(), matrix.begin()+count, local_matrix.begin());
             } else {
-                MPI_Send(matrix.data() + offset, count, MPI_INT, i, 0, MPI_COMM_WORLD);
+                MPI_Send(matrix.data()+offset, count, MPI_INT, i, 0, MPI_COMM_WORLD);
             }
             offset += count;
         }
@@ -65,28 +65,27 @@ int main(int argc, char** argv) {
         MPI_Recv(local_matrix.data(), local_matrix.size(), MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    auto start = std::chrono::high_resolution_clock::now();
-
     std::vector<int> local_result(local_rows, 0);
-    compute(local_rows, cols, local_matrix, vector, local_result);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    compute_simple(local_rows, cols, local_matrix, vector, local_result);
+    auto end = std::chrono::high_resolution_clock::now();
 
     if (world_rank == 0) {
-        int offset = local_rows;
         std::copy(local_result.begin(), local_result.end(), result.begin());
+        int offset = local_rows;
         for (int i = 1; i < world_size; ++i) {
-            int recv_count = (i < extra_rows ? rows_per_proc + 1 : rows_per_proc);
-            MPI_Recv(result.data() + offset, recv_count, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            int recv_count = (i < extra_rows ? rows_per_proc+1 : rows_per_proc);
+            MPI_Recv(result.data()+offset, recv_count, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             offset += recv_count;
         }
     } else {
         MPI_Send(local_result.data(), local_rows, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    double time_taken = std::chrono::duration<double>(end - start).count();
-
     if (world_rank == 0) {
-        write_result(output_filename, result, time_taken, false);
+        double time_taken = std::chrono::duration<double>(end - start).count();
+        write_result(output_filename, result, time_taken, true);
     }
 
     MPI_Finalize();

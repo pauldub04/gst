@@ -32,7 +32,8 @@ func main() {
 	filename := pflag.String("filename", "input", "")
 	seed := pflag.Uint64("seed", 0, "")
 	runs := pflag.Int32("runs", 1, "")
-	np := pflag.Int32("np", 2, "")
+	mpi := pflag.Int32("mpi", -1, "")
+	local := pflag.Bool("local", false, "")
 	pflag.Parse()
 
 	if *seed == 0 {
@@ -41,27 +42,40 @@ func main() {
 	fmt.Printf("Using seed %d\n", *seed)
 
 	sizes := []int32{1, 5, 10, 50, 100, 500}
-	// sizes := []int32{1, 5, 10, 50, 100, 500, 1000}
 	results := make([]float64, 0)
-	fmt.Printf("Using %d processes\n", *np)
+	if *mpi != -1 {
+		fmt.Printf("Using %d mpi processes\n", *mpi)
+	}
 
 	for _, sizeInMB := range sizes {
 
 		var totalComputeTime float64 = 0
 		for i := int32(0); i < *runs; i++ {
 			fmt.Printf("Run %d of %d, Size %d; ", i+1, *runs, sizeInMB)
-			client.Run(*filename, *seed, sizeInMB)
+			client.Run(*filename, *seed, sizeInMB, *local, "local")
 
-			cmd := exec.Command("mpirun", "-np", strconv.Itoa(int(*np)), "--allow-run-as-root", "./compute", *filename, "output")
-			// cmd := exec.Command("./compute", *filename, "output")
-			err := cmd.Run()
-			if err != nil {
+			var cmd *exec.Cmd
+			if *mpi != -1 {
+				cmd = exec.Command("mpirun", "-np", strconv.Itoa(int(*mpi)), "--allow-run-as-root", "./compute", *filename, "output")
+			} else {
+				cmd = exec.Command("./compute", *filename, "output")
+			}
+
+			if err := cmd.Run(); err != nil {
 				log.Fatal("exec error: ", err)
 			}
 
 			computeTime, err := readTimeFromFile("time")
 			if err != nil {
 				log.Fatal("readTimeFromFile error: ", err)
+			}
+
+			if *local {
+				if client.DeepCompareFiles("local", "output") {
+					fmt.Print("[OK]; ")
+				} else {
+					fmt.Print("[ERROR]; ")
+				}
 			}
 
 			computeTime *= 1000.0
@@ -74,6 +88,6 @@ func main() {
 
 	fmt.Println("RESULTS")
 	for _, result := range results {
-		fmt.Printf(strings.Replace(fmt.Sprintf("%.3f\n", result), ".", ",", 1))
+		fmt.Println(strings.Replace(fmt.Sprintf("%.3f", result), ".", ",", 1))
 	}
 }
