@@ -11,13 +11,17 @@ CXXFLAGS += -O3 -Wall -Werror -Wextra
 
 all: run
 
-run: client_go server_simple
-# cd build && ./test --seed 1 --local --mpi 4
-	cd build && ./test --seed 1 --local
+run: client_go server_mpi
+	cd build && ./test --seed 1 --local --runs 3 --mpi 4
+# cd build && ./test --seed 1 --local
 
 server_simple:
 	@mkdir -p build
 	g++ $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cpp -o build/$(TARGET)
+
+server_mpi:
+	@mkdir -p build
+	mpic++ $(CXXFLAGS) $(LDFLAGS) $(SRC_DIR)/$@.cpp -o build/$(TARGET)
 
 server_mpi_send:
 	@mkdir -p build
